@@ -7,8 +7,8 @@
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uild_Data/
-/[Bb]uilds/
-!/[Bb]uilds/WebGL/
+/[Bb]uilds/*
+!/Builds/WebGL/*
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /Build*

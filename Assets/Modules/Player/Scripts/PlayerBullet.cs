@@ -1,30 +1,20 @@
+using System;
 using System.Collections;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerBullet : NetworkBehaviour
 {
-    public float speed;
-    public Vector2 direction;
-    public Collider2D ownerCollider;
-
-    private new Collider2D collider;
     private new Rigidbody2D rigidbody;
+    private SpriteRenderer spriteRenderer;
+    private NetworkObject networkObject;
 
     void Awake()
     {
-        collider = GetComponent<Collider2D>();
         rigidbody = GetComponent<Rigidbody2D>();
-    }
-
-    void Start()
-    {
-        if (IsServer)
-        {
-            rigidbody.velocity = direction * speed;
-
-            Physics2D.IgnoreCollision(collider, ownerCollider);
-        }
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        networkObject = GetComponent<NetworkObject>();
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -46,14 +36,30 @@ public class PlayerBullet : NetworkBehaviour
         }
     }
 
-    void Explode()
+    async void Explode()
     {
-        Destroy(gameObject);
+        rigidbody.isKinematic = true;
+
+        ExplodeRpc();
+
+        await Task.Delay(TimeSpan.FromSeconds(3f));
+
+        networkObject.Despawn();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void ExplodeRpc()
+    {
+        rigidbody.isKinematic = true;
+        rigidbody.velocity = Vector2.zero;
+        spriteRenderer.color = new Color(1f, 0f, 0f, 0.3f);
+        transform.localScale = new Vector2(0.3f, 0.3f);
     }
 
     IEnumerator ExplodeAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
+
         Explode();
     }
 }

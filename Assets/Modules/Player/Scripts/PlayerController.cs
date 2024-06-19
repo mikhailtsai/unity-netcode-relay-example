@@ -10,7 +10,8 @@ public class PlayerController : NetworkBehaviour
     public float jumpForce = 6.0f;
     public Color ownerColor = new Color(100f, 220f, 140f, 1f);
     public Color othersColor = new Color(100f, 140, 220f, 1f);
-    public TMP_Text playerName;
+    public string playerName;
+    public TMP_Text playerNameText;
     public GameObject bulletPrefab;
 
     private bool stopped = false;
@@ -70,16 +71,12 @@ public class PlayerController : NetworkBehaviour
         {
             Vector3 mouseScreenPosition = Input.mousePosition;
             Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPosition);
-            Vector3 objectPosition = transform.position;
 
             Vector2 direction = new Vector2(
-                mouseWorldPosition.x - objectPosition.x,
-                mouseWorldPosition.y - objectPosition.y
+                mouseWorldPosition.x - transform.position.x,
+                mouseWorldPosition.y - transform.position.y
             );
             direction.Normalize();
-
-            Debug.Log("shooting");
-            Debug.Log(direction);
 
             HandleShootingServerRpc(direction);
         }
@@ -102,12 +99,14 @@ public class PlayerController : NetworkBehaviour
     void HandleShootingServerRpc(Vector2 direction)
     {
         GameObject bullet = Instantiate(bulletPrefab, (Vector2)transform.position + new Vector2(0, 1.75f), Quaternion.identity);
-        NetworkObject networkObject = bullet.GetComponent<NetworkObject>();
+
         PlayerBullet playerBullet = bullet.GetComponent<PlayerBullet>();
-        playerBullet.direction = direction;
-        playerBullet.ownerCollider = collider;
-        networkObject.Spawn();
-        Debug.Log("Bullet spawned");
+
+        playerBullet.GetComponent<Rigidbody2D>().velocity = direction * 10f;
+
+        Physics2D.IgnoreCollision(playerBullet.GetComponent<Collider2D>(), collider);
+
+        bullet.GetComponent<NetworkObject>().Spawn();
     }
 
     [Rpc(SendTo.Server)]
